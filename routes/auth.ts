@@ -1,6 +1,6 @@
-import { signupValidator } from "./../utils/validator";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { signupValidator } from "./../utils/validator";
 import UserModel from "../models/users";
 import { loginValidator } from "../utils/validator";
 

@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+
+const saltRounds = 10;
 
 const userSchema = new mongoose.Schema(
   {
@@ -19,6 +22,24 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.pre("save", async function (next) {
+  const user = this;
+
+  if (!user.isModified("password")) next();
+  // bcrypt.genSalt(saltRounds, (err, salt) => {
+  //   if (err) next(err);
+  //   bcrypt.hash(user.password, saltRounds, (err, hash) => {
+  //     if (err) next(err);
+  //     user.password = hash;
+  //     next();
+  //   });
+  // });
+  const salt = await bcrypt.genSalt(saltRounds);
+  const hash = await bcrypt.hash(user.password, salt);
+  user.password = hash;
+  next();
+});
 
 const UserModel = mongoose.model("user", userSchema);
 
