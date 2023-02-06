@@ -1,3 +1,4 @@
+import { createToken } from "./../utils/authorizeUtils";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -18,7 +19,10 @@ export const signin = async (req: Request, res: Response) => {
       let isPasswordSame = await bcrypt.compare(password, dbUser.password);
 
       if (isPasswordSame) {
-        res.status(StatusCodes.OK).send("성공적으로 로그인했습니다.");
+        res.status(StatusCodes.OK).send({
+          message: "성공적으로 로그인 했습니다.",
+          token: createToken(email),
+        });
       } else {
         res.status(StatusCodes.BAD_REQUEST).send("틀린 비밀번호입니다.");
       }
