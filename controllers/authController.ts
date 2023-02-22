@@ -1,9 +1,10 @@
-import { createToken } from "./../utils/authorizeUtils";
-import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import UserModel from "../models/users";
+import bcrypt from "bcrypt";
+
 import { loginValidator, signupValidator } from "./../utils/validator";
+import { createToken } from "./../utils/authorizeUtils";
+import UserModel from "../models/users";
 
 export const signin = async (req: Request, res: Response) => {
   req.body;
@@ -17,11 +18,19 @@ export const signin = async (req: Request, res: Response) => {
     const dbUser = await UserModel.findOne({ email }).exec();
     if (dbUser) {
       let isPasswordSame = await bcrypt.compare(password, dbUser.password);
-
       if (isPasswordSame) {
         res.status(StatusCodes.OK).send({
           message: "성공적으로 로그인 했습니다.",
-          token: createToken(email),
+          data: {
+            uid: dbUser._id,
+            email: dbUser.email,
+            nickname: dbUser.nickname,
+          },
+          token: createToken({
+            uid: dbUser._id,
+            email: dbUser.email,
+            nickname: dbUser.nickname,
+          }),
         });
       } else {
         res.status(StatusCodes.BAD_REQUEST).send("틀린 비밀번호입니다.");
