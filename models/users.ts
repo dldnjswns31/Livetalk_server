@@ -1,7 +1,9 @@
+import dotenv from "dotenv";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const saltRounds = 10;
+dotenv.config();
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS);
 
 const userSchema = new mongoose.Schema(
   {
@@ -27,7 +29,7 @@ userSchema.pre("save", async function (next) {
   const user = this;
 
   if (!user.isModified("password")) next();
-  const salt = await bcrypt.genSalt(saltRounds);
+  const salt = await bcrypt.genSalt(SALT_ROUNDS);
   const hash = await bcrypt.hash(user.password, salt);
   user.password = hash;
   next();
