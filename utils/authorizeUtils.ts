@@ -10,5 +10,10 @@ export const createToken = (obj: { uid: any; email: any; nickname: any }) => {
 };
 
 export const verifyToken = (value: string) => {
-  return jwt.verify(value, JWT_TOKEN_SALT as string);
+  try {
+    const data = jwt.verify(value, JWT_TOKEN_SALT as string);
+    return data;
+  } catch (err) {
+    return false;
+  }
 };

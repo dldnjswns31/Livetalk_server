@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler } from "express";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 import cors from "cors";
 import createError from "http-errors";
@@ -8,6 +8,13 @@ import indexRouter from "./routes";
 import authRouter from "./routes/auth";
 
 require("dotenv").config();
+declare module "socket.io" {
+  interface Socket {
+    uid: string;
+    nickname: string;
+    email: string;
+  }
+}
 
 const app = express();
 const server = createServer(app);
@@ -19,23 +26,43 @@ const io = new Server(server, {
 });
 app.set("io", io);
 
+io.use((socket, next) => {
+  const { uid, nickname } = socket.handshake.auth;
+
+  socket.uid = uid;
+  socket.nickname = nickname;
+  socket.join(uid);
+  next();
+});
+
 io.on("connection", async (socket) => {
   console.log(`${socket.id} connected`);
-
-  let users: { userID: string }[] = [];
+  console.log(io.sockets.adapter, socket.id);
+  console.log("---------");
+  let users: {
+    uid: string;
+    nickname: string;
+    messages: [];
+  }[] = [];
   for (let [id, socket] of io.of("/").sockets) {
-    users.push({
-      userID: id,
-    });
+    if (!users.find((item) => item.uid === socket.uid)) {
+      users.push({
+        uid: socket.uid,
+        nickname: socket.nickname,
+        messages: [],
+      });
+    }
   }
-
-  console.log(users);
 
   io.emit("users", users);
   socket.broadcast.emit("newUser", { userID: socket.id });
 
+  socket.on("private message", (data) => {
+    socket.to(data.to).emit("private message", data);
+  });
+
   socket.on("disconnect", () => {
-    users = users.filter((user) => user.userID !== socket.id);
+    users = users.filter((user) => user.uid !== socket.uid);
     io.emit("users", users);
     console.log(`Socket ${socket.id} disconnected`);
   });

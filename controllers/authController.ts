@@ -3,11 +3,10 @@ import { StatusCodes } from "http-status-codes";
 import bcrypt from "bcrypt";
 
 import { loginValidator, signupValidator } from "./../utils/validator";
-import { createToken } from "./../utils/authorizeUtils";
+import { createToken, verifyToken } from "./../utils/authorizeUtils";
 import UserModel from "../models/users";
 
 export const signin = async (req: Request, res: Response) => {
-  req.body;
   const { email, password } = req.body;
   const { isValid, message } = loginValidator({ email, password });
 
@@ -19,6 +18,14 @@ export const signin = async (req: Request, res: Response) => {
     if (dbUser) {
       let isPasswordSame = await bcrypt.compare(password, dbUser.password);
       if (isPasswordSame) {
+        const token = createToken({
+          uid: dbUser._id,
+          email: dbUser.email,
+          nickname: dbUser.nickname,
+        });
+        res.setHeader("authorization", token);
+        res.setHeader("Access-Control-Expose-Headers", "authorization");
+
         res.status(StatusCodes.OK).send({
           message: "성공적으로 로그인 했습니다.",
           data: {
@@ -26,11 +33,6 @@ export const signin = async (req: Request, res: Response) => {
             email: dbUser.email,
             nickname: dbUser.nickname,
           },
-          token: createToken({
-            uid: dbUser._id,
-            email: dbUser.email,
-            nickname: dbUser.nickname,
-          }),
         });
       } else {
         res.status(StatusCodes.BAD_REQUEST).send("틀린 비밀번호입니다.");
@@ -65,5 +67,22 @@ export const signup = async (req: Request, res: Response) => {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .send({ error: "server error" });
+  }
+};
+
+export const verify = (req: Request, res: Response) => {
+  if (req.headers.authorization) {
+    const data = verifyToken(req.headers.authorization);
+    if (data) {
+      return res.status(StatusCodes.OK).send(data);
+    } else {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .send({ error: "토큰이 만료되었습니다." });
+    }
+  } else {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .send({ error: "토큰이 없습니다." });
   }
 };
