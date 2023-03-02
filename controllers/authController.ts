@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 
 import { loginValidator, signupValidator } from "./../utils/validator";
 import { createToken, verifyToken } from "./../utils/authorizeUtils";
-import UserModel from "../models/users";
+import userModel from "../models/users";
 
 export const signin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -14,7 +14,7 @@ export const signin = async (req: Request, res: Response) => {
     return res.status(StatusCodes.BAD_REQUEST).send(message);
   }
   try {
-    const dbUser = await UserModel.findOne({ email }).exec();
+    const dbUser = await userModel.findOne({ email }).exec();
     if (dbUser) {
       let isPasswordSame = await bcrypt.compare(password, dbUser.password);
       if (isPasswordSame) {
@@ -53,12 +53,12 @@ export const signup = async (req: Request, res: Response) => {
     return res.status(StatusCodes.BAD_REQUEST).send(message);
   }
 
-  const duplicateEmail = await UserModel.findOne({ email }).exec();
+  const duplicateEmail = await userModel.findOne({ email }).exec();
   if (duplicateEmail) {
     return res.status(StatusCodes.CONFLICT).send("이미 존재하는 이메일입니다.");
   }
 
-  const user = new UserModel({ email, password, nickname });
+  const user = new userModel({ email, password, nickname });
 
   try {
     await user.save();

@@ -6,25 +6,27 @@ dotenv.config();
 
 const URI = process.env.MONGODB_URI;
 
-// mongoose.connect(URI as string, { dbName: "live_chat" });
+mongoose.connect(URI as string, { dbName: "live_chat" });
 
-// const db = mongoose.connection;
+const db = mongoose.connection;
 
-// db.on("error", console.error.bind(console, "connection error:"));
-// db.once("open", function callback() {
-//   console.log("MongoDB Connected...");
-// });
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", function callback() {
+  console.log("MongoDB Connected...");
+});
 
-const connectDB = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await mongoose.connect(URI as string, { dbName: "live_chat" });
-    console.log("MongoDB connected!");
-    next();
-  } catch (err) {
-    const error = err as MongooseError;
-    console.error(error.message);
-    process.exit(1);
-  }
-};
+export default db;
 
-export default connectDB;
+// const connectDB = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     await mongoose.connect(URI as string, { dbName: "live_chat" });
+//     console.log("MongoDB connected!");
+//     next();
+//   } catch (err) {
+//     const error = err as MongooseError;
+//     console.error(error.message);
+//     process.exit(1);
+//   }
+// };
+
+// export default connectDB;

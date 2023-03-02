@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema(
   {
     email: {
       type: String,
-      requried: true,
+      required: true,
+      unique: 1,
     },
     password: {
       type: String,
@@ -17,8 +18,21 @@ const userSchema = new mongoose.Schema(
     },
     nickname: {
       type: String,
-      require: true,
+      required: true,
+      unique: 1,
     },
+    rooms: [
+      {
+        opponent: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+        },
+        chat: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "chat",
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -35,6 +49,6 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-const UserModel = mongoose.model("user", userSchema);
+const userModel = mongoose.model("user", userSchema);
 
-export default UserModel;
+export default userModel;
