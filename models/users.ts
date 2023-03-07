@@ -21,18 +21,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: 1,
     },
-    rooms: [
-      {
-        opponent: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "user",
-        },
-        chat: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "chat",
-        },
-      },
-    ],
   },
   {
     timestamps: true,

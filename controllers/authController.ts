@@ -19,7 +19,7 @@ export const signin = async (req: Request, res: Response) => {
       let isPasswordSame = await bcrypt.compare(password, dbUser.password);
       if (isPasswordSame) {
         const token = createToken({
-          uid: dbUser._id,
+          uid: dbUser._id.toString(),
           email: dbUser.email,
           nickname: dbUser.nickname,
         });
@@ -78,11 +78,11 @@ export const verify = (req: Request, res: Response) => {
     } else {
       return res
         .status(StatusCodes.UNAUTHORIZED)
-        .send({ error: "토큰이 만료되었습니다." });
+        .send({ message: "토큰이 만료되었습니다." });
     }
   } else {
     return res
       .status(StatusCodes.UNAUTHORIZED)
-      .send({ error: "토큰이 없습니다." });
+      .send({ message: "토큰이 없습니다." });
   }
 };

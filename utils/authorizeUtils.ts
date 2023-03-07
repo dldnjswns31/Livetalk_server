@@ -5,15 +5,21 @@ dotenv.config();
 
 const JWT_TOKEN_SALT = process.env.JWT_SALT;
 
-export const createToken = (obj: { uid: any; email: any; nickname: any }) => {
+interface IJwtPayload {
+  uid: string;
+  email: string;
+  nickname: string;
+}
+
+export const createToken = (obj: IJwtPayload) => {
   return jwt.sign(obj, JWT_TOKEN_SALT as string);
 };
 
-export const verifyToken = (value: string) => {
+export const verifyToken = (value: string): IJwtPayload | undefined => {
   try {
-    const data = jwt.verify(value, JWT_TOKEN_SALT as string);
+    const data = jwt.verify(value, JWT_TOKEN_SALT as string) as IJwtPayload;
     return data;
   } catch (err) {
-    return false;
+    console.log(err);
   }
 };
