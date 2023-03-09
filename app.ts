@@ -56,17 +56,10 @@ io.on("connection", async (socket) => {
     }
   }
 
-  // io.emit("userlist", userlist);
   socket.broadcast.emit("userlist", userlist);
 
   socket.on("getUserlist", () => {
     socket.emit("userlist", userlist);
-  });
-
-  // 개인 메세지 전송
-  socket.on("private message", (data) => {
-    console.log("message");
-    socket.to(data.to).emit("private message", data);
   });
 
   // 연결 끊을 시 현재 유저 목록 재전송
