@@ -87,6 +87,9 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
           { $and: [{ to: req.query.uid }, { from: res.locals.jwtUser.uid }] },
         ],
       })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .sort({ createdAt: 1 })
       .project({
         __v: 0,
         conversation: 0,
@@ -102,54 +105,5 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .send({ data: "채팅 불러오기 실패" });
-  }
-};
-
-// socket event
-export const sendMessage = async (req: Request, res: Response) => {
-  try {
-    const from = new mongoose.Types.ObjectId(res.locals.jwtUser.uid);
-    const to = new mongoose.Types.ObjectId(req.body.to);
-
-    const conversation = await conversationModel.findOneAndUpdate(
-      {
-        participants: {
-          $all: [{ $elemMatch: { $eq: from } }, { $elemMatch: { $eq: to } }],
-        },
-      },
-      {
-        participants: [res.locals.jwtUser.uid, req.body.to],
-        lastMessage: req.body.message,
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
-
-    const chat = new chatModel({
-      conversation: conversation._id,
-      to,
-      from,
-      message: req.body.message,
-    });
-
-    await req.app
-      .get("io")
-      .to(req.body.to)
-      .to(res.locals.jwtUser.uid)
-      .emit("private message", req.body.message);
-
-    await chat.save();
-    res.status(StatusCodes.OK).send({
-      message: "Success",
-      conversationId: conversation._id,
-    });
-  } catch (err) {
-    console.log(err);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ data: "메세지 전송 오류" });
   }
 };

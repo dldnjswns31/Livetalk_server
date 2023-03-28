@@ -6,7 +6,6 @@ import {
   getAllConversationList,
   getAllUserList,
   getUserMessageHistory,
-  sendMessage,
 } from "../controllers/chatController";
 
 const chatRouter = Router();
@@ -36,8 +35,5 @@ chatRouter.get("/conversations", getAllConversationList);
 
 // 해당 유저와의 채팅 내역 (/conversation/query?id=:id)
 chatRouter.get("/conversations/query", getUserMessageHistory);
-
-// 채팅 송신
-chatRouter.post("/message", sendMessage);
 
 export default chatRouter;
