@@ -61,6 +61,8 @@ export const getAllConversationList = async (req: Request, res: Response) => {
 };
 
 export const getUserMessageHistory = async (req: Request, res: Response) => {
+  const user1 = res.locals.jwtUser.uid;
+  const user2 = req.query.uid;
   try {
     const messages = await chatModel
       .aggregate([
@@ -83,8 +85,8 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
       ])
       .match({
         $or: [
-          { $and: [{ to: res.locals.jwtUser.uid }, { from: req.query.uid }] },
-          { $and: [{ to: req.query.uid }, { from: res.locals.jwtUser.uid }] },
+          { $and: [{ to: user1 }, { from: user2 }] },
+          { $and: [{ to: user2 }, { from: user1 }] },
         ],
       })
       .sort({ createdAt: -1 })
@@ -100,6 +102,24 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
       .exec();
 
     res.status(StatusCodes.OK).send(messages);
+  } catch (err) {
+    console.log(err);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .send({ data: "채팅 불러오기 실패" });
+  }
+};
+
+export const getMoreMessages = async (req: Request, res: Response) => {
+  try {
+    const { messageID } = req.query;
+
+    const messages = await chatModel
+      .find({ _id: { $lt: messageID } }, { conversation: 0 })
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    res.status(StatusCodes.OK).send(messages.reverse());
   } catch (err) {
     console.log(err);
     res

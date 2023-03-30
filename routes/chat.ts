@@ -1,3 +1,4 @@
+import { getMoreMessages } from "./../controllers/chatController";
 import { verifyToken } from "./../utils/authorizeUtils";
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -33,7 +34,9 @@ chatRouter.get("/", getAllUserList);
 // 채팅 목록 (/conversation)
 chatRouter.get("/conversations", getAllConversationList);
 
-// 해당 유저와의 채팅 내역 (/conversation/query?id=:id)
-chatRouter.get("/conversations/query", getUserMessageHistory);
+// 해당 유저와의 채팅 내역 (/conversation/user?id=:id)
+chatRouter.get("/conversations/user", getUserMessageHistory);
 
+// 채팅 내역 추가로 불러오기 (/conversations/message?id=:id)
+chatRouter.get("/conversations/message", getMoreMessages);
 export default chatRouter;
