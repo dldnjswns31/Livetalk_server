@@ -112,10 +112,39 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
 
 export const getMoreMessages = async (req: Request, res: Response) => {
   try {
-    const { messageID } = req.query;
+    const { uid, messageID } = req.query;
+    const user1 = res.locals.jwtUser.uid;
+    const user2 = uid;
 
     const messages = await chatModel
-      .find({ _id: { $lt: messageID } }, { conversation: 0 })
+      .aggregate([
+        {
+          $lookup: {
+            from: "users",
+            localField: "to",
+            foreignField: "_id",
+            as: "toObj",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "from",
+            foreignField: "_id",
+            as: "fromObj",
+          },
+        },
+      ])
+      .match({
+        $or: [
+          { $and: [{ to: user1 }, { from: user2 }] },
+          { $and: [{ to: user2 }, { from: user1 }] },
+        ],
+      })
+      .match({
+        _id: { $lt: messageID },
+      })
+      .project({ conversation: 0 })
       .sort({ createdAt: -1 })
       .limit(30);
 
