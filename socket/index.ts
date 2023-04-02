@@ -76,6 +76,7 @@ const sendMessage = (socket: Socket) => {
     const { to, message: messageContent } = data;
     const fromObjectId = new mongoose.Types.ObjectId(from);
     const toObjectId = new mongoose.Types.ObjectId(to);
+    const roomname = [from, to].sort().join("");
 
     const conversation = await conversationModel.findOneAndUpdate(
       {
@@ -110,58 +111,27 @@ const sendMessage = (socket: Socket) => {
       socket.join(conversation._id.toString());
     }
 
-    io.to(conversation._id.toString()).emit("private message", savedMessage);
-    io.to(to).to(from).emit("reload conversation");
+    io.to(roomname).emit("private message", savedMessage);
   });
 };
 
 const joinRoom = (socket: Socket) => {
   socket.on("join room", async (uid) => {
-    const user1 = new mongoose.Types.ObjectId(uid);
-    const user2 = new mongoose.Types.ObjectId(socket.uid);
+    const user1 = uid;
+    const user2 = socket.uid;
+    const roomname = [user1, user2].sort().join("");
 
-    const conversation = await conversationModel
-      .findOne(
-        {
-          participants: {
-            $all: [
-              { $elemMatch: { $eq: user1 } },
-              { $elemMatch: { $eq: user2 } },
-            ],
-          },
-        },
-        { _id: 1 }
-      )
-      .exec();
-
-    if (conversation) {
-      socket.join(conversation._id.toString());
-    }
+    socket.join(roomname);
   });
 };
 
 const leaveRoom = (socket: Socket) => {
-  socket.on("leave room", async (data) => {
-    const user1 = new mongoose.Types.ObjectId(data.uid);
-    const user2 = new mongoose.Types.ObjectId(socket.uid);
+  socket.on("leave room", async (uid) => {
+    const user1 = uid;
+    const user2 = socket.uid;
+    const roomname = [user1, user2].sort().join("");
 
-    const conversation = await conversationModel
-      .findOne(
-        {
-          participants: {
-            $all: [
-              { $elemMatch: { $eq: user1 } },
-              { $elemMatch: { $eq: user2 } },
-            ],
-          },
-        },
-        { _id: 1 }
-      )
-      .exec();
-
-    if (conversation) {
-      socket.leave(conversation._id.toString());
-    }
+    socket.leave(roomname);
   });
 };
 
