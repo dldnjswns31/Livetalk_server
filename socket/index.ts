@@ -1,7 +1,7 @@
 import http from "http";
 import mongoose from "mongoose";
 import { Server, Socket } from "socket.io";
-import chatModel from "../models/chat";
+import messageModel from "../models/message";
 import conversationModel from "../models/conversation";
 
 let io: Server;
@@ -43,9 +43,7 @@ const getIO = () => {
   return io;
 };
 
-/*
-    socket event handler
-*/
+// socket event handler
 
 const sendConnectingUser = (socket: Socket) => {
   for (let [id, socket] of io.of("/").sockets) {
@@ -75,7 +73,7 @@ const disconnect = (socket: Socket) => {
 const sendMessage = (socket: Socket) => {
   socket.on("message", async (data) => {
     const from = socket.uid;
-    const { to, message } = data;
+    const { to, message: messageContent } = data;
     const fromObjectId = new mongoose.Types.ObjectId(from);
     const toObjectId = new mongoose.Types.ObjectId(to);
 
@@ -89,8 +87,8 @@ const sendMessage = (socket: Socket) => {
         },
       },
       {
-        participants: [from, to],
-        lastMessage: message,
+        participants: [fromObjectId, toObjectId],
+        lastMessage: messageContent,
       },
       {
         upsert: true,
@@ -99,14 +97,14 @@ const sendMessage = (socket: Socket) => {
       }
     );
 
-    const chat = new chatModel({
+    const message = new messageModel({
       conversation: conversation._id,
-      to,
-      from,
-      message: message,
+      to: toObjectId,
+      from: fromObjectId,
+      message: messageContent,
     });
 
-    const savedMessage = await chat.save();
+    const savedMessage = await message.save();
 
     if (!socket.rooms.has(conversation._id.toString())) {
       socket.join(conversation._id.toString());
@@ -118,8 +116,8 @@ const sendMessage = (socket: Socket) => {
 };
 
 const joinRoom = (socket: Socket) => {
-  socket.on("join room", async (data) => {
-    const user1 = new mongoose.Types.ObjectId(data.uid);
+  socket.on("join room", async (uid) => {
+    const user1 = new mongoose.Types.ObjectId(uid);
     const user2 = new mongoose.Types.ObjectId(socket.uid);
 
     const conversation = await conversationModel

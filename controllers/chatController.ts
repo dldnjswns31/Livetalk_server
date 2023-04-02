@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 
 import userModel from "../models/users";
 import conversationModel from "../models/conversation";
-import chatModel from "../models/chat";
+import messageModel from "../models/message";
 
 export const getAllUserList = async (req: Request, res: Response) => {
   try {
@@ -30,7 +30,7 @@ export const getAllUserList = async (req: Request, res: Response) => {
 export const getAllConversationList = async (req: Request, res: Response) => {
   try {
     const jwtUser = res.locals.jwtUser;
-    const from = new mongoose.Types.ObjectId(jwtUser.uid);
+    const uid = new mongoose.Types.ObjectId(jwtUser.uid);
     const conversations = await conversationModel
       .aggregate([
         {
@@ -42,7 +42,7 @@ export const getAllConversationList = async (req: Request, res: Response) => {
           },
         },
       ])
-      .match({ participants: { $all: [{ $elemMatch: { $eq: from } }] } })
+      .match({ participants: { $all: [{ $elemMatch: { $eq: uid } }] } })
       .project({
         participants: 0,
         "participantObj.password": 0,
@@ -61,10 +61,10 @@ export const getAllConversationList = async (req: Request, res: Response) => {
 };
 
 export const getUserMessageHistory = async (req: Request, res: Response) => {
-  const user1 = res.locals.jwtUser.uid;
-  const user2 = req.query.uid;
+  const user1 = new mongoose.Types.ObjectId(res.locals.jwtUser.uid);
+  const user2 = new mongoose.Types.ObjectId(req.query.uid as string);
   try {
-    const messages = await chatModel
+    const messages = await messageModel
       .aggregate([
         {
           $lookup: {
@@ -112,41 +112,30 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
 
 export const getMoreMessages = async (req: Request, res: Response) => {
   try {
-    const { uid, messageID } = req.query;
+    const uid = req.query.uid as string;
+    const messageID = req.query.messageID as string;
     const user1 = res.locals.jwtUser.uid;
     const user2 = uid;
 
-    const messages = await chatModel
+    const messages = await messageModel
       .aggregate([
         {
-          $lookup: {
-            from: "users",
-            localField: "to",
-            foreignField: "_id",
-            as: "toObj",
+          $match: {
+            $or: [
+              { $and: [{ to: user1 }, { from: user2 }] },
+              { $and: [{ to: user2 }, { from: user1 }] },
+            ],
           },
         },
         {
-          $lookup: {
-            from: "users",
-            localField: "from",
-            foreignField: "_id",
-            as: "fromObj",
+          $sort: {
+            createdAt: -1,
           },
         },
+        { $match: { _id: { $lt: new mongoose.Types.ObjectId(messageID) } } },
+        { $limit: 30 },
       ])
-      .match({
-        $or: [
-          { $and: [{ to: user1 }, { from: user2 }] },
-          { $and: [{ to: user2 }, { from: user1 }] },
-        ],
-      })
-      .match({
-        _id: { $lt: messageID },
-      })
-      .project({ conversation: 0 })
-      .sort({ createdAt: -1 })
-      .limit(30);
+      .exec();
 
     res.status(StatusCodes.OK).send(messages.reverse());
   } catch (err) {
