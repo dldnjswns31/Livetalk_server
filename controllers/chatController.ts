@@ -41,16 +41,50 @@ export const getAllConversationList = async (req: Request, res: Response) => {
             as: "participantObj",
           },
         },
+        {
+          $match: {
+            participants: { $all: [{ $elemMatch: { $eq: uid } }] },
+          },
+        },
+        {
+          $project: {
+            lastMessage: 1,
+            updatedAt: 1,
+            "participantObj._id": 1,
+            "participantObj.nickname": 1,
+          },
+        },
+        {
+          $lookup: {
+            from: "messages",
+            let: { conversation: "$_id", uid },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$conversation", "$$conversation"] },
+                      { $eq: ["$to", uid] },
+                      { $eq: ["$isRead", false] },
+                    ],
+                  },
+                },
+              },
+              { $count: "unreadCount" },
+            ],
+            as: "unreadCount",
+          },
+        },
+        {
+          $project: {
+            lastMessage: 1,
+            updatedAt: 1,
+            "participantObj._id": 1,
+            "participantObj.nickname": 1,
+            unreadCount: { $arrayElemAt: ["$unreadCount.unreadCount", 0] },
+          },
+        },
       ])
-      .match({ participants: { $all: [{ $elemMatch: { $eq: uid } }] } })
-      .project({
-        participants: 0,
-        "participantObj.password": 0,
-        "participantObj.email": 0,
-        "participantObj.createdAt": 0,
-        "participantObj.updatedAt": 0,
-        "participantObj.__v": 0,
-      })
       .exec();
     res.status(StatusCodes.OK).send(conversations);
   } catch (err) {

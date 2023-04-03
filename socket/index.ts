@@ -111,7 +111,10 @@ const sendMessage = (socket: Socket) => {
       socket.join(conversation._id.toString());
     }
 
+    // 채팅방에 메세지 전송
     io.to(roomname).emit("private message", savedMessage);
+    // 채팅 목록 갱신 용도
+    io.to(to).to(from).emit("reload conversation");
   });
 };
 
@@ -134,5 +137,7 @@ const leaveRoom = (socket: Socket) => {
     socket.leave(roomname);
   });
 };
+
+const readMessage = (socket: Socket) => {};
 
 export { initSocket, getIO };
