@@ -31,9 +31,10 @@ const initSocket = (server: http.Server) => {
   io.on("connection", (socket) => {
     sendConnectingUser(socket);
     disconnect(socket);
-    sendMessage(socket);
+    sendMessage(socket, io);
     joinRoom(socket);
     leaveRoom(socket);
+    readMessage(socket, io);
   });
 };
 
@@ -70,7 +71,7 @@ const disconnect = (socket: Socket) => {
   });
 };
 
-const sendMessage = (socket: Socket) => {
+const sendMessage = (socket: Socket, io: Server) => {
   socket.on("message", async (data) => {
     const from = socket.uid;
     const { to, message: messageContent } = data;
@@ -98,18 +99,27 @@ const sendMessage = (socket: Socket) => {
       }
     );
 
-    const message = new messageModel({
-      conversation: conversation._id,
-      to: toObjectId,
-      from: fromObjectId,
-      message: messageContent,
-    });
+    let message;
+    let connectingUser = io.sockets.adapter.rooms.get(roomname)?.size;
+
+    if (connectingUser === 1) {
+      message = new messageModel({
+        conversation: conversation._id,
+        to: toObjectId,
+        from: fromObjectId,
+        message: messageContent,
+      });
+    } else {
+      message = new messageModel({
+        conversation: conversation._id,
+        to: toObjectId,
+        from: fromObjectId,
+        message: messageContent,
+        isRead: true,
+      });
+    }
 
     const savedMessage = await message.save();
-
-    if (!socket.rooms.has(conversation._id.toString())) {
-      socket.join(conversation._id.toString());
-    }
 
     // 채팅방에 메세지 전송
     io.to(roomname).emit("private message", savedMessage);
@@ -120,9 +130,9 @@ const sendMessage = (socket: Socket) => {
 
 const joinRoom = (socket: Socket) => {
   socket.on("join room", async (uid) => {
-    const user1 = uid;
-    const user2 = socket.uid;
-    const roomname = [user1, user2].sort().join("");
+    const myUid = uid;
+    const opponentUid = socket.uid;
+    const roomname = [myUid, opponentUid].sort().join("");
 
     socket.join(roomname);
   });
@@ -130,14 +140,26 @@ const joinRoom = (socket: Socket) => {
 
 const leaveRoom = (socket: Socket) => {
   socket.on("leave room", async (uid) => {
-    const user1 = uid;
-    const user2 = socket.uid;
-    const roomname = [user1, user2].sort().join("");
+    const myUid = socket.uid;
+    const opponentUid = uid;
+    const roomname = [myUid, opponentUid].sort().join("");
 
     socket.leave(roomname);
   });
 };
 
-const readMessage = (socket: Socket) => {};
+const readMessage = (socket: Socket, io: Server) => {
+  socket.on("read message", async (uid) => {
+    const myUid = new mongoose.Types.ObjectId(socket.uid);
+    const opponentUid = new mongoose.Types.ObjectId(uid);
+
+    await messageModel.updateMany(
+      { to: myUid, from: opponentUid, isRead: false },
+      { $set: { isRead: true } }
+    );
+    socket.emit("reload conversation");
+    io.to(uid).emit("read message");
+  });
+};
 
 export { initSocket, getIO };

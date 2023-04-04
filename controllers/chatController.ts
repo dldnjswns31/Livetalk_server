@@ -148,8 +148,8 @@ export const getMoreMessages = async (req: Request, res: Response) => {
   try {
     const uid = req.query.uid as string;
     const messageID = req.query.messageID as string;
-    const user1 = res.locals.jwtUser.uid;
-    const user2 = uid;
+    const user1 = new mongoose.Types.ObjectId(res.locals.jwtUser.uid);
+    const user2 = new mongoose.Types.ObjectId(uid);
 
     const messages = await messageModel
       .aggregate([
