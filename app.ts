@@ -1,35 +1,40 @@
-import { ErrorRequestHandler, NextFunction, Request } from "express";
+import express, { ErrorRequestHandler } from "express";
+import { Server } from "socket.io";
+import { createServer } from "http";
+import cors from "cors";
+import createError from "http-errors";
 
-const createError = require("http-errors");
-const express = require("express");
-const path = require("path");
-const cookieParser = require("cookie-parser");
-const logger = require("morgan");
-const fs = require("fs");
-const cors = require("cors");
-const db = require("./apis/db");
+import db from "./apis/db";
+import indexRouter from "./routes";
+import authRouter from "./routes/auth";
+import chatRouter from "./routes/chat";
+import { getIO, initSocket } from "./socket";
+
 require("dotenv").config();
-
-const indexRouter = require("./routes/index");
-const authRouter = require("./routes/auth");
+// mongoose connect
+db;
+declare module "socket.io" {
+  interface Socket {
+    uid: string;
+    nickname: string;
+    email: string;
+  }
+}
 
 const app = express();
+const server = createServer(app);
+initSocket(server);
+app.set("io", getIO());
 
-app.use(
-  logger("dev", {
-    stream: fs.createWriteStream("app.log", { flags: "w" }),
-  })
-);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
 
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
+app.use("/chat", chatRouter);
 
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req, res, next) => {
   next(createError(404));
 });
 
@@ -42,8 +47,8 @@ app.use(errorHandler);
 
 const port = process.env.SERVER_PORT;
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on ${port} port...`);
 });
 
-module.exports = app;
+export default app;
