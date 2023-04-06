@@ -44,7 +44,7 @@ const getIO = () => {
   return io;
 };
 
-// socket event handler
+// socket 이벤트 핸들러 모음
 
 const sendConnectingUser = (socket: Socket) => {
   for (let [id, socket] of io.of("/").sockets) {
@@ -77,7 +77,6 @@ const sendMessage = (socket: Socket, io: Server) => {
     const { to, message: messageContent } = data;
     const fromObjectId = new mongoose.Types.ObjectId(from);
     const toObjectId = new mongoose.Types.ObjectId(to);
-    const roomname = [from, to].sort().join("");
 
     const conversation = await conversationModel.findOneAndUpdate(
       {
@@ -100,7 +99,9 @@ const sendMessage = (socket: Socket, io: Server) => {
     );
 
     let message;
-    let connectingUser = io.sockets.adapter.rooms.get(roomname)?.size;
+    let connectingUser = io.sockets.adapter.rooms.get(
+      getRoomname(to, from)
+    )?.size;
 
     if (connectingUser === 1) {
       message = new messageModel({
@@ -122,7 +123,7 @@ const sendMessage = (socket: Socket, io: Server) => {
     const savedMessage = await message.save();
 
     // 채팅방에 메세지 전송
-    io.to(roomname).emit("private message", savedMessage);
+    io.to(getRoomname(from, to)).emit("private message", savedMessage);
     // 채팅 목록 갱신 용도
     io.to(to).to(from).emit("reload conversation");
   });
@@ -130,11 +131,7 @@ const sendMessage = (socket: Socket, io: Server) => {
 
 const joinRoom = (socket: Socket) => {
   socket.on("join room", async (uid) => {
-    const myUid = uid;
-    const opponentUid = socket.uid;
-    const roomname = [myUid, opponentUid].sort().join("");
-
-    socket.join(roomname);
+    socket.join(getRoomname(uid, socket.uid));
   });
 };
 
@@ -150,16 +147,13 @@ const leaveRoom = (socket: Socket) => {
 
 const readMessage = (socket: Socket, io: Server) => {
   socket.on("read message", async (uid) => {
-    const myUid = new mongoose.Types.ObjectId(socket.uid);
-    const opponentUid = new mongoose.Types.ObjectId(uid);
-
-    await messageModel.updateMany(
-      { to: myUid, from: opponentUid, isRead: false },
-      { $set: { isRead: true } }
-    );
-    socket.emit("reload conversation");
-    io.to(uid).emit("read message");
+    socket.emit("remove unread", uid);
+    io.to(getRoomname(uid, socket.uid)).emit("read message", uid);
   });
 };
+
+function getRoomname(uid1: string, uid2: string) {
+  return [uid1, uid2].sort().join("");
+}
 
 export { initSocket, getIO };

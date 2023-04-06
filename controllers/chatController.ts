@@ -84,6 +84,11 @@ export const getAllConversationList = async (req: Request, res: Response) => {
             unreadCount: { $arrayElemAt: ["$unreadCount.unreadCount", 0] },
           },
         },
+        {
+          $sort: {
+            updatedAt: -1,
+          },
+        },
       ])
       .exec();
     res.status(StatusCodes.OK).send(conversations);
@@ -95,44 +100,42 @@ export const getAllConversationList = async (req: Request, res: Response) => {
 };
 
 export const getUserMessageHistory = async (req: Request, res: Response) => {
-  const user1 = new mongoose.Types.ObjectId(res.locals.jwtUser.uid);
-  const user2 = new mongoose.Types.ObjectId(req.query.uid as string);
+  const myUid = new mongoose.Types.ObjectId(res.locals.jwtUser.uid);
+  const opponentUid = new mongoose.Types.ObjectId(req.query.uid as string);
   try {
+    await messageModel.updateMany(
+      { to: myUid, from: opponentUid, isRead: false },
+      { $set: { isRead: true } }
+    );
+
     const messages = await messageModel
       .aggregate([
         {
-          $lookup: {
-            from: "users",
-            localField: "to",
-            foreignField: "_id",
-            as: "toObj",
+          $match: {
+            $or: [
+              { $and: [{ to: myUid }, { from: opponentUid }] },
+              { $and: [{ to: opponentUid }, { from: myUid }] },
+            ],
           },
         },
         {
-          $lookup: {
-            from: "users",
-            localField: "from",
-            foreignField: "_id",
-            as: "fromObj",
+          $sort: {
+            createdAt: -1,
+          },
+        },
+        { $limit: 30 },
+        { $sort: { createdAt: 1 } },
+        {
+          $project: {
+            _id: 1,
+            from: 1,
+            to: 1,
+            message: 1,
+            isRead: 1,
+            createdAt: 1,
           },
         },
       ])
-      .match({
-        $or: [
-          { $and: [{ to: user1 }, { from: user2 }] },
-          { $and: [{ to: user2 }, { from: user1 }] },
-        ],
-      })
-      .sort({ createdAt: -1 })
-      .limit(30)
-      .sort({ createdAt: 1 })
-      .project({
-        __v: 0,
-        conversation: 0,
-        updatedAt: 0,
-        toObj: 0,
-        fromObj: 0,
-      })
       .exec();
 
     res.status(StatusCodes.OK).send(messages);

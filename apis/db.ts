@@ -16,17 +16,3 @@ db.once("open", function callback() {
 });
 
 export default db;
-
-// const connectDB = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     await mongoose.connect(URI as string, { dbName: "live_chat" });
-//     console.log("MongoDB connected!");
-//     next();
-//   } catch (err) {
-//     const error = err as MongooseError;
-//     console.error(error.message);
-//     process.exit(1);
-//   }
-// };
-
-// export default connectDB;
