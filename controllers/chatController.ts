@@ -21,9 +21,7 @@ export const getAllUserList = async (req: Request, res: Response) => {
       .exec();
     res.status(StatusCodes.OK).send({ data: allUserList });
   } catch (err) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ data: "DB 조회 에러" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("DB 조회 에러");
   }
 };
 
@@ -95,7 +93,7 @@ export const getAllConversationList = async (req: Request, res: Response) => {
   } catch (err) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ data: "채팅 목록 불러오기 실패" });
+      .send("채팅 목록 불러오기 실패");
   }
 };
 
@@ -141,9 +139,7 @@ export const getUserMessageHistory = async (req: Request, res: Response) => {
     res.status(StatusCodes.OK).send(messages);
   } catch (err) {
     console.log(err);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ data: "채팅 불러오기 실패" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("채팅 불러오기 실패");
   }
 };
 
@@ -177,8 +173,6 @@ export const getMoreMessages = async (req: Request, res: Response) => {
     res.status(StatusCodes.OK).send(messages.reverse());
   } catch (err) {
     console.log(err);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ data: "채팅 불러오기 실패" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("채팅 불러오기 실패");
   }
 };

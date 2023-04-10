@@ -40,9 +40,7 @@ export const signin = async (req: Request, res: Response) => {
     } else
       res.status(StatusCodes.BAD_REQUEST).send("존재하지 않는 유저입니다.");
   } catch (err) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ error: "server error" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("server error");
   }
 };
 
@@ -55,7 +53,12 @@ export const signup = async (req: Request, res: Response) => {
 
   const duplicateEmail = await userModel.findOne({ email }).exec();
   if (duplicateEmail) {
-    return res.status(StatusCodes.CONFLICT).send("이미 존재하는 이메일입니다.");
+    return res.status(StatusCodes.CONFLICT).send("이미 사용중인 이메일입니다.");
+  }
+
+  const duplicateNickname = await userModel.findOne({ nickname }).exec();
+  if (duplicateNickname) {
+    return res.status(StatusCodes.CONFLICT).send("이미 사용중인 닉네임입니다.");
   }
 
   const user = new userModel({ email, password, nickname });
@@ -64,9 +67,7 @@ export const signup = async (req: Request, res: Response) => {
     await user.save();
     res.status(StatusCodes.OK).send("회원가입 완료됐습니다.");
   } catch (err) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({ error: "server error" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("server error");
   }
 };
 
@@ -78,11 +79,9 @@ export const verify = (req: Request, res: Response) => {
     } else {
       return res
         .status(StatusCodes.UNAUTHORIZED)
-        .send({ message: "토큰이 만료되었습니다." });
+        .send("토큰이 만료되었습니다.");
     }
   } else {
-    return res
-      .status(StatusCodes.UNAUTHORIZED)
-      .send({ message: "토큰이 없습니다." });
+    return res.status(StatusCodes.UNAUTHORIZED).send("토큰이 없습니다.");
   }
 };
