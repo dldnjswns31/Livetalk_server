@@ -31,3 +31,7 @@ BCRYPT_SALT_ROUNDS=임의의 숫자
 npm i
 npm start
 ```
+
+## 추가 구현 목록
+
+- logger 설치 및 설정
