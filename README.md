@@ -7,11 +7,9 @@
 
 ## 사용 기술
 
-- React
+- Express
 - Typescript
-- Axios
-- Styled-components
-- Redux
+- MongoDB
 - Socket.io
 
 ## 실행 방법
