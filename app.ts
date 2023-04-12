@@ -32,7 +32,7 @@ app.use(cors());
 app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
-    "https://livetalk-client.vercel.app/"
+    "https://livetalk-client.vercel.app"
   );
   res.setHeader(
     "Access-Control-Allow-Methods",
