@@ -3,7 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./app.ts"
+    "start": "nodemon src/index.ts",
+    "build": "rimraf dist && tsc",
+    "ts.check": "tsc --project tsconfig.json",
+    "add-build": "git add dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -29,6 +33,13 @@
     "@types/mongoose": "^5.11.97",
     "@types/validator": "^13.7.12",
     "nodemon": "^2.0.20",
+    "pre-commit": "^1.2.2",
+    "rimraf": "^5.0.0",
     "ts-node": "^10.9.1"
-  }
+  },
+  "pre-commit": [
+    "ts.check",
+    "build",
+    "add-build"
+  ]
 }
