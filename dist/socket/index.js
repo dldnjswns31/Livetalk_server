@@ -23,7 +23,7 @@ let userlist = [];
 const initSocket = (server) => {
     io = new socket_io_1.Server(server, {
         cors: {
-            origin: "*",
+            origin: "https://livetalk-client.vercel.app",
             methods: ["GET", "POST"],
         },
     });
