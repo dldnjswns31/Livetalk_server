@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./app.ts"
+    "dev": "nodemon ./app.ts",
+    "start": "pm2 start app.ts --name my-app",
+    "stop": "pm2 stop my-app",
+    "restart": "pm2 restart my-app"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
