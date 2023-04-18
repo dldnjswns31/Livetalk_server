@@ -27,7 +27,7 @@ BCRYPT_SALT_ROUNDS=임의의 숫자
 
 // 패키지 설치 후 실행
 npm i
-npm start
+npm run dev
 ```
 
 ## 추가 구현 목록
